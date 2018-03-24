@@ -2,49 +2,55 @@ package main
 
 import (
 	"github.com/bbuck/go-lexer"
-	"log"
 	"fmt"
+	//"unicode"
 	"unicode"
-	"unicode/utf8"
 )
 
 const (
 	_  = iota
-	StringToken
-	IntegerToken
+	IdentifierToken
+	KeywordToken
+	OpAndPuncToken
+	LiteralToken
+
 )
+var Keywords  = [...]string {
+	"break", "case", "chan", "const", "continue",
+	"default", "defer", "else", "fallthrough", "for",
+	"func", "go", "goto", "if", "import",
+	"interface", "map", "package", "range", "return",
+	"select", "struct", "switch", "type", "var",
+}
 
 func main()  {
-	teste := `123456789`
+	teste := .25
 
-	l := lexer.New(teste, NumberState)
-	l.Start()
+}
 
-	tok, done := l.NextToken()
-	if done {
-		log.Print("Falhou")
+func Root(l *lexer.L) lexer.StateFunc {
+	for unicode.IsSpace(l.Peek()) {
+		l.Ignore()
 	}
-	fmt.Println(tok.Type)
-}
+	r := l.Next()
 
-func Program(L *lexer.L) lexer.StateFunc {
-	return ProgramHeading(L)
-}
-
-func ProgramHeading(L *lexer.L) lexer.StateFunc {
-	if unicode.IsLetter(L.Peek()) {
-		return Identifier(L)
+	if unicode.IsLetter(r) {
+		CheckKeyword(l)
+	} else if r == '_' {
+		Identifier(l)
+	} else if unicode.IsSymbol(r) || unicode.IsPunct(r) {
+		OpAndPunc(l)
+	} else if unicode.IsDigit(r) || r == '.'  {
+		Numbers(l)
+	} else if r == '\'' {
+		Runes(l)
+	} else if r == '"' {
+		Strings(l)
 	} else {
-		return nil
+		l.Error(fmt.Sprintf("Símboolo desconhecido %q", r))
 	}
-}
 
-func NumberState(L *lexer.L) lexer.StateFunc {
-	L.Take("0123456789")
-	L.Emit(IntegerToken)
 	return nil
 }
 
-func Identifier(L *lexer.L) lexer.StateFunc {
 
-}
