@@ -15,13 +15,7 @@ const (
 	LiteralToken
 
 )
-var Keywords  = [...]string {
-	"break", "case", "chan", "const", "continue",
-	"default", "defer", "else", "fallthrough", "for",
-	"func", "go", "goto", "if", "import",
-	"interface", "map", "package", "range", "return",
-	"select", "struct", "switch", "type", "var",
-}
+
 
 func main()  {
 	teste := .25
@@ -32,20 +26,21 @@ func Root(l *lexer.L) lexer.StateFunc {
 	for unicode.IsSpace(l.Peek()) {
 		l.Ignore()
 	}
-	r := l.Next()
+	if unicode.IsLetter(l.Peek()) {
+		return CheckKeyword(l)
+	}
 
-	if unicode.IsLetter(r) {
-		CheckKeyword(l)
-	} else if r == '_' {
-		Identifier(l)
+	r := l.Next()
+	 if r == '_' {
+		return Identifier(l)
 	} else if unicode.IsSymbol(r) || unicode.IsPunct(r) {
-		OpAndPunc(l)
+		return OpAndPunc(l)
 	} else if unicode.IsDigit(r) || r == '.'  {
-		Numbers(l)
+		return Numbers(l)
 	} else if r == '\'' {
-		Runes(l)
+		return Runes(l)
 	} else if r == '"' {
-		Strings(l)
+		return Strings(l)
 	} else {
 		l.Error(fmt.Sprintf("Símboolo desconhecido %q", r))
 	}
@@ -53,4 +48,28 @@ func Root(l *lexer.L) lexer.StateFunc {
 	return nil
 }
 
+func CheckKeyword(l *lexer.L) lexer.StateFunc {
+	var Keywords  = [25]string {
+		"break", "case", "chan", "const", "continue",
+		"default", "defer", "else", "fallthrough", "for",
+		"func", "go", "goto", "if", "import",
+		"interface", "map", "package", "range", "return",
+		"select", "struct", "switch", "type", "var",
+	}
+	r := l.Next()
+	for i, word := range Keywords {
+		for j, c := range word {
+			if r != c {
+				break
+			} else {
+				r = l.Next()
+			}
+			if l.Current() == word && unicode.IsSpace(l.Peek()) {
+				l.Emit(KeywordToken)
+				return Root(l)
+			} else {
 
+			}
+		}
+	}
+}
