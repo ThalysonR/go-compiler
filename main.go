@@ -24,13 +24,13 @@ var Keywords  = [25]string {
 }
 
 func main()  {
-	teste := "case umdoistres"
+	teste := "case switch"
 
 	l := lexer.New(teste, Root)
 
 	l.Start()
 
-	for tok, done := l.NextToken(); done; {
+	for tok, done := l.NextToken(); !done; tok,done = l.NextToken() {
 		fmt.Printf("%q - %q", tok.Value, tok.Type)
 	}
 	//for r := l.Next(); r != lexer.EOFRune ; {
@@ -67,7 +67,7 @@ func Root(l *lexer.L) lexer.StateFunc {
 		//	return Runes(l)
 		//} else if r == '"' {
 		//	return Strings(l)
-	} else {
+	} else if r != lexer.EOFRune {
 		l.Error(fmt.Sprintf("Símbolo desconhecido %q", r))
 	}
 
@@ -77,11 +77,12 @@ func Root(l *lexer.L) lexer.StateFunc {
 func CheckKeyword(l *lexer.L) lexer.StateFunc {
 	r := l.Next()
 	fmt.Println("r: " + string(r))
-	kw := Keywords
-	counter := 0
-	for _, word := range kw {
+	//kw := Keywords
+	//fmt.Print(Keywords)
+	for _, word := range Keywords {
+		counter := 0
 		for _, lt := range word {
-			fmt.Printf("%q = %q\n", string(r), string(lt))
+			//fmt.Printf("%q = %q\n", string(r), string(lt))
 			if lt != r {
 				break
 			} else {
@@ -89,8 +90,12 @@ func CheckKeyword(l *lexer.L) lexer.StateFunc {
 				r = l.Next()
 			}
 		}
-		if unicode.IsSpace(r) {
-			fmt.Println("Match: " + word)
+		if unicode.IsSpace(r) || r == lexer.EOFRune {
+			l.Emit(KeywordToken)
+			fmt.Println("Match: " + word + "\n")
+			return Root(l)
+		}
+		if counter > 0 {
 			for  ;counter >= 0; counter-- {
 				l.Rewind()
 			}
