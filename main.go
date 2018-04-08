@@ -1,5 +1,6 @@
 package main
 
+//Bibliotecas importadas
 import (
 	"fmt"
 	"github.com/bbuck/go-lexer"
@@ -9,6 +10,7 @@ import (
 	"io/ioutil"
 )
 
+// Tokens
 const (
 	_ = iota
 	IdentifierToken
@@ -21,6 +23,7 @@ const (
 	StringLiteralToken
 )
 
+//Palavras Chave da linguagem
 var Keywords = [25]string{
 	"break", "case", "chan", "const", "continue",
 	"default", "defer", "else", "fallthrough", "for",
@@ -28,6 +31,8 @@ var Keywords = [25]string{
 	"interface", "map", "package", "range", "return",
 	"select", "struct", "switch", "type", "var",
 }
+
+//Operadores e pontuações da linguagem
 var OpAndPuncs = [47]string{
 	"+", "&", "+=", "&=", "&&", "==", "!=", "(", ")",
 	"-", "|", "-=", "|=", "||", "<", "<=", "[", "]",
@@ -37,20 +42,36 @@ var OpAndPuncs = [47]string{
 	"&^", "&^=",
 }
 
+//Associação do token com um nome legível, em string
+var Tokens = map[int]string{
+	IdentifierToken: "Identificador",
+	KeywordToken: "Palavra Chave",
+	OpAndPuncToken: "Operador/Pontuação",
+	IntLiteralToken: "Literal Int",
+	FloatLiteralToken: "Literal Float",
+	ImagLiteralToken: "Literal Imaginário",
+	RuneLiteralToken: "Literal Rune",
+	StringLiteralToken: "Literal String",
+}
+
+//Função para identificar um dígito hexadecimal
 func isHex(r rune) bool {
 	return strings.ContainsRune("0123456789abcdfABCDF", r)
 }
 
+//Função para identificar um dígito octal
 func isOctal(r rune) bool {
 	return strings.ContainsRune("01234567", r)
 }
 
+//Função para identificar se o caractér passado está dentro dos operadores e pontuações da lnguagem
 func isOpAndPunc(r rune) bool {
 	return strings.ContainsRune("+-*/%&|^<>=!:.([{,)]};", r)
 }
 
 func main() {
-	f, _ := os.Open("teste.txt")
+	code := os.Args[1]
+	f, _ := os.Open(code)
 	txt, _ := ioutil.ReadAll(f)
 	//fmt.Print(string(txt))
 
@@ -58,24 +79,32 @@ func main() {
 
 	l.Start()
 
+	//Loop para retirar tokens da cadeia de tokens
 	for tok, done := l.NextToken(); !done; tok, done = l.NextToken() {
-		fmt.Printf("%q - %q\n", tok.Value, tok.Type)
+		fmt.Printf("%q - %q\n", tok.Value, Tokens[int(tok.Type)])
 	}
 }
 
+//Função raiz, para análise do código
 func Root(l *lexer.L) lexer.StateFunc {
 	for unicode.IsSpace(l.Next()) {
 		l.Ignore()
 	}
 	l.Rewind()
-
 	r := l.Peek()
 	//fmt.Println("r: " + string(r) + "\n")
 	if unicode.IsLetter(r) {
 		return CheckKeyword(l)
 	}
+	if r == '/' {
+		if l.Peek() == '/' {
+			return Comment(l)
+		} else {
+			l.Error(fmt.Sprintf("Simbolo inesperado: %q", r))
+			return nil
+		}
 
-	if r == '_' {
+	} else if r == '_' {
 		return Identifier(l)
 	} else if r == '\'' {
 		return Runes(l)
@@ -102,8 +131,9 @@ func Root(l *lexer.L) lexer.StateFunc {
 	return nil
 }
 
+//Função para checar se a palavra analisada é uma palavra-chave
 func CheckKeyword(l *lexer.L) lexer.StateFunc {
-	fmt.Println("Entrou CK")
+	//fmt.Println("Entrou CK")
 	r := l.Next()
 	for unicode.IsLetter(r) {
 		r = l.Next()
@@ -119,8 +149,9 @@ func CheckKeyword(l *lexer.L) lexer.StateFunc {
 	return Identifier(l)
 }
 
+//Função para checar se a palavra analisada é um identificador
 func Identifier(l *lexer.L) lexer.StateFunc {
-	fmt.Println("Entrou Id")
+	//fmt.Println("Entrou Id")
 	r := l.Next()
 
 	for unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' {
@@ -133,6 +164,7 @@ func Identifier(l *lexer.L) lexer.StateFunc {
 	return Root(l)
 }
 
+//Função para checar se a palavra analisada é um operador ou pontuação
 func OpAndPunc(l *lexer.L) lexer.StateFunc {
 	var counter int
 	for isOpAndPunc(l.Next()) {
@@ -148,13 +180,14 @@ func OpAndPunc(l *lexer.L) lexer.StateFunc {
 		}
 		l.Rewind()
 	}
-
+	l.Next()
 	l.Error(fmt.Sprintf("Operador/Pontuação desconhecido: %q", l.Current()))
 	return nil
 }
 
+//Função para checar se a palavra analisada é um literal numérico
 func Numbers(l *lexer.L) lexer.StateFunc {
-	fmt.Println("Entrou Numb")
+	//fmt.Println("Entrou Numb")
 	l.Take("0123456789")
 
 	r := l.Peek()
@@ -178,8 +211,9 @@ func Numbers(l *lexer.L) lexer.StateFunc {
 	return nil
 }
 
+//Função para checar se a palavra analisada é um literal numérico flutuante
 func Float(l *lexer.L) lexer.StateFunc {
-	fmt.Println("Entrou float")
+	//fmt.Println("Entrou float")
 	l.Next()
 	l.Take("0123456789")
 
@@ -214,8 +248,9 @@ func Float(l *lexer.L) lexer.StateFunc {
 	return nil
 }
 
+//Função para checar se a palavra analisada é um literal rune (ou caractér)
 func Runes(l *lexer.L) lexer.StateFunc {
-	fmt.Println("Entrou Runes")
+	//fmt.Println("Entrou Runes")
 	l.Next()
 	r := l.Next()
 	if r == '\\' {
@@ -266,8 +301,9 @@ func Runes(l *lexer.L) lexer.StateFunc {
 	return nil
 }
 
+//Função para checar se a palavra analisada é um literal string válido
 func Strings(l *lexer.L) lexer.StateFunc {
-	fmt.Println("Entrou string")
+	//fmt.Println("Entrou string")
 	r := l.Next()
 	if r == '`' {
 		for ok := true; ok; r = l.Next() {
@@ -288,7 +324,7 @@ func Strings(l *lexer.L) lexer.StateFunc {
 					l.Error(fmt.Sprintf("Quebra de linha inesperada: %q", l.Current()))
 					return nil
 				}
-				continue
+				r = l.Next()
 			}
 			if r == '\\' {
 				r = l.Next()
@@ -332,5 +368,15 @@ func Strings(l *lexer.L) lexer.StateFunc {
 		}
 	}
 	l.Emit(StringLiteralToken)
+	return Root(l)
+}
+
+//Função para ignorar comentários
+func Comment(l *lexer.L) lexer.StateFunc {
+	l.Rewind()
+	for l.Next() != '\n' {
+		l.Ignore()
+	}
+	l.Ignore()
 	return Root(l)
 }
