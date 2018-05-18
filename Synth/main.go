@@ -124,7 +124,8 @@ func FunctionDecl(s *S) StateFunc {
 
 func MethodDecl(s *S) StateFunc {
 	return nil
-}
+}'
+'
 
 func ConstDecl(s *S) StateFunc {
 	d := s.Peek()
