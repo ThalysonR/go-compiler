@@ -9,9 +9,14 @@ type StateFunc func(*S) StateFunc
 
 type DeclarationType int
 
+
+
+type Metadados interface {}
+
 type Declaration struct {
 	Type  DeclarationType
 	Value []Lex.Token
+	Extras Metadados
 }
 
 type S struct {
@@ -64,10 +69,11 @@ func (s *S) Current() []Lex.Token {
 
 // Emit will receive a token type and push a new token with the current analyzed
 // value into the tokens channel.
-func (s *S) Emit(d DeclarationType) {
+func (s *S) Emit(d DeclarationType, m Metadados) {
 	dec := Declaration{
 		Type:  d,
 		Value: s.Current(),
+		Extras: m,
 	}
 	s.declarations <- dec
 	s.start = s.position

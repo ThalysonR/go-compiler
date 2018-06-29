@@ -2,9 +2,12 @@ package main
 
 import (
 	"fmt"
-	"math/rand"
+	//"math/rand"
 )
 
 func main() {
 	fmt.Println("My favorite number is, rand.Intn(10)")
+	teste1 := 2/0
+	fmt.Println(teste1)
+	return
 }

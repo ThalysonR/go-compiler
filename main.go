@@ -36,8 +36,19 @@ func main() {
 	//	fmt.Printf("%q - %q; Linha: %d - Coluna: %d\n", tok.Value, Tokens[int(tok.Type)], tok.Linha, tok.Coluna)
 	//}
 	s := Synth.Start(l)
+	variaveis := make(map[string]*Synth.Declaration)
 	for dec, done := s.NextDeclaration(); !done; dec, done = s.NextDeclaration() {
-		fmt.Printf("%q - %q\n", dec.Value, Declarations[int(dec.Type)])
+		//fmt.Printf("%q - %q\n", dec.Value, Declarations[int(dec.Type)])
+		if dec.Type == Synth.ArrayDeclaration {
+			 metadados := dec.Extras.(Synth.ArrayMetadados)
+			 variaveis[metadados.Nome] = dec
+		} else if dec.Type == Synth.ArrayUUso {
+			metadados := dec.Extras.(Synth.ArrayUsoMetadados)
+			variavel := variaveis[metadados.Nome]
+			if variavel.Extras.(Synth.ArrayMetadados).Indices <= metadados.IndiceAcessado {
+				fmt.Println("Indice fora do limite da array")
+			}
+		}
 	}
 
 }
